@@ -522,6 +522,11 @@
             <esi_tag>Fastly_CDN_Model_Esi_Tag_GeoIp_Action</esi_tag>
             <processor>Fastly_CDN_Model_Esi_Processor_GeoIp_Action</processor>
         </getcountryaction>
+        <core_messages>
+            <block>core/messages</block>
+            <esi_tag>Fastly_CDN_Model_Esi_Tag_Core_Messages</esi_tag>
+            <processor>Fastly_CDN_Model_Esi_Processor_Core_Messages</processor>
+        </core_messages>
     </fastlycdn_esi_tags>
     <default>
         <fastlycdn>
