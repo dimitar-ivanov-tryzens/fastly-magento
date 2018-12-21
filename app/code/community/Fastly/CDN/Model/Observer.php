@@ -490,6 +490,11 @@ class Fastly_CDN_Model_Observer
         $this->_setPageHeaderCookie();
     }
 
+    public function updateMessagesBlock(Varien_Event_Observer $observer)
+    {
+        $this->_setMessageCookie();
+    }
+
     /**
      * remove compare list cookie
      *
@@ -751,6 +756,22 @@ class Fastly_CDN_Model_Observer
             $cookieData,
             true,
             Fastly_CDN_Model_Esi_Tag_Reports_Product_Compared::COOKIE_NAME
+        );
+    }
+
+    protected function _setMessageCookie()
+    {
+        $cookieData = array();
+        foreach ($_SESSION as $sessionData) {
+            if (isset($sessionData['messages']) && $sessionData['messages'] instanceof Mage_Core_Model_Message_Collection) {
+                $cookieData[] = $sessionData['messages'];
+            }
+        }
+
+        $this->_getHelper()->setEsiCookie(
+            Mage::helper('core')->jsonEncode($cookieData),
+            true,
+            Fastly_CDN_Model_Esi_Tag_Core_Messages::COOKIE_NAME
         );
     }
 

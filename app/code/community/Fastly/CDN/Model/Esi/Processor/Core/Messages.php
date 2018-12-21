@@ -27,6 +27,7 @@ class Fastly_CDN_Model_Esi_Processor_Core_Messages extends Fastly_CDN_Model_Esi_
      * @see Mage_Core_Block_Abstract::toHtml
      * @return string
      */
+    protected $_noCache = false;
     public function getHtml()
     {
         $content = '';
@@ -37,27 +38,47 @@ class Fastly_CDN_Model_Esi_Processor_Core_Messages extends Fastly_CDN_Model_Esi_
         }
 
         $block = $this->_block;
-
-
-
+        $noCache = false;
         foreach ($_SESSION as $sessionData) {
             if ($block instanceof Mage_Core_Block_Messages && isset($sessionData['messages']) && $sessionData['messages'] instanceof Mage_Core_Model_Message_Collection) {
                 $block->addMessages($sessionData['messages']);
                 $sessionData['messages']->clear();
+                $noCache = true;
             }
         }
+
         if ($this->_block instanceof Mage_Core_Block_Abstract) {
             $debug = $this->_getHelper()->isEsiDebugEnabled();
+
+            $blockHtml  = $this->_block->toHtml();
+            if ($blockHtml !== '') {
+                Mage::helper('fastlycdn/cache')->setTtlHeader(0);
+            }
+
             if ($debug) {
                 $content .= '<div style="border: 2px dotted red">';
             }
 
-            $content .= $this->_block->toHtml();
+            $content .= $blockHtml;
 
             if ($debug) {
                 $content .= '</div>';
             }
         }
+
+        if ($noCache) {
+            $this->_noCache = $noCache;
+        }
+
         return $content;
+    }
+
+    public function getEsiBlockTtl($block)
+    {
+        if ($this->_noCache) {
+            return 0;
+        }
+
+        return parent::getEsiBlockTtl($block);
     }
 }

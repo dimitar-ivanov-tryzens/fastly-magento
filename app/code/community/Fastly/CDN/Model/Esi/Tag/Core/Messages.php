@@ -21,7 +21,7 @@
 
 class Fastly_CDN_Model_Esi_Tag_Core_Messages extends Fastly_CDN_Model_Esi_Tag_Abstract
 {
-    const COOKIE_NAME = 'test-message';
+    const COOKIE_NAME = 'message';
     const ESI_URL     = 'fastlycdn/esi/core_messages';
 
     /**
