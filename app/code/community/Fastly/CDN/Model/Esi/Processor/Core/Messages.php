@@ -33,18 +33,28 @@ class Fastly_CDN_Model_Esi_Processor_Core_Messages extends Fastly_CDN_Model_Esi_
         $content = '';
         $request = Mage::app()->getRequest();
         $layoutName = $request->getParam('layout_name');
-        if (!isset($_SESSION) || $layoutName !== 'messages') {
+        if ($layoutName !== 'messages') {
             return $content;
         }
 
-        $block = $this->_block;
-        $noCache = false;
-        foreach ($_SESSION as $sessionData) {
-            if ($block instanceof Mage_Core_Block_Messages && isset($sessionData['messages']) && $sessionData['messages'] instanceof Mage_Core_Model_Message_Collection) {
-                $block->addMessages($sessionData['messages']);
-                $sessionData['messages']->clear();
-                $noCache = true;
+        $block           = $this->_block;
+        $messagesStorage = $this->_getMessagesStorage();
+
+        try {
+            foreach ($messagesStorage as $storageName) {
+                $storage = Mage::getSingleton($storageName);
+                if ($storage) {
+                    $block->addMessages($storage->getMessages(true));
+                    $block->setEscapeMessageFlag($storage->getEscapeMessages(true));
+                    $block->addStorageType($storageName);
+                }
+                else {
+                    $errorMessage = $this->_getHelper()->__('Invalid messages storage "%s" for layout messages initialization', (string)$storageName);
+                    Mage::throwException($errorMessage);
+                }
             }
+        } catch (Exception $e) {
+            $this->_getHelper()->debug($e->getMessage());
         }
 
         if ($this->_block instanceof Mage_Core_Block_Abstract) {
@@ -52,7 +62,7 @@ class Fastly_CDN_Model_Esi_Processor_Core_Messages extends Fastly_CDN_Model_Esi_
 
             $blockHtml  = $this->_block->toHtml();
             if ($blockHtml !== '') {
-                Mage::helper('fastlycdn/cache')->setTtlHeader(0);
+                $this->_noCache = true;
             }
 
             if ($debug) {
@@ -66,10 +76,6 @@ class Fastly_CDN_Model_Esi_Processor_Core_Messages extends Fastly_CDN_Model_Esi_
             }
         }
 
-        if ($noCache) {
-            $this->_noCache = $noCache;
-        }
-
         return $content;
     }
 
@@ -80,5 +86,17 @@ class Fastly_CDN_Model_Esi_Processor_Core_Messages extends Fastly_CDN_Model_Esi_
         }
 
         return parent::getEsiBlockTtl($block);
+    }
+
+    /**
+     * @return array
+     */
+    private function _getMessagesStorage()
+    {
+        return array(
+            'catalog/session',
+            'tag/session',
+            'checkout/session'
+        );
     }
 }
