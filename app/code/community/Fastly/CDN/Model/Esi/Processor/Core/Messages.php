@@ -32,7 +32,7 @@ class Fastly_CDN_Model_Esi_Processor_Core_Messages extends Fastly_CDN_Model_Esi_
     {
         $content = '';
         $request = Mage::app()->getRequest();
-        $layoutName = $request->getParam('layout_name');
+        $layoutName = $request->getParam(Fastly_CDN_Helper_Data::PARAM_LAYOUT_NAME);
         if ($layoutName !== 'messages') {
             return $content;
         }
@@ -42,11 +42,13 @@ class Fastly_CDN_Model_Esi_Processor_Core_Messages extends Fastly_CDN_Model_Esi_
 
         try {
             foreach ($messagesStorage as $storageName) {
-                $storage = Mage::getSingleton($storageName);
-                if ($storage) {
-                    $block->addMessages($storage->getMessages(true));
-                    $block->setEscapeMessageFlag($storage->getEscapeMessages(true));
-                    $block->addStorageType($storageName);
+                if (!isset($_SESSION[$storageName]['messages'])) {
+                    continue;
+                }
+                $messages = $_SESSION[$storageName]['messages'];
+                if ($messages instanceof Mage_Core_Model_Message_Collection) {
+                    $block->addMessages($messages);
+                    $messages->clear();
                 }
                 else {
                     $errorMessage = $this->_getHelper()->__('Invalid messages storage "%s" for layout messages initialization', (string)$storageName);
@@ -57,10 +59,10 @@ class Fastly_CDN_Model_Esi_Processor_Core_Messages extends Fastly_CDN_Model_Esi_
             $this->_getHelper()->debug($e->getMessage());
         }
 
-        if ($this->_block instanceof Mage_Core_Block_Abstract) {
+        if ($block instanceof Mage_Core_Block_Abstract) {
             $debug = $this->_getHelper()->isEsiDebugEnabled();
 
-            $blockHtml  = $this->_block->toHtml();
+            $blockHtml  = $block->toHtml();
             if ($blockHtml !== '') {
                 $this->_noCache = true;
             }
@@ -94,9 +96,9 @@ class Fastly_CDN_Model_Esi_Processor_Core_Messages extends Fastly_CDN_Model_Esi_
     private function _getMessagesStorage()
     {
         return array(
-            'catalog/session',
-            'tag/session',
-            'checkout/session'
+            'catalog',
+            'tag',
+            'checkout'
         );
     }
 }
